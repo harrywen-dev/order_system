@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: lunch
+      POSTGRES_USER: lunch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: ["db_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lunch"]
+      interval: 3s
+      retries: 20
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://lunch:${POSTGRES_PASSWORD}@db:5432/lunch
+    depends_on:
+      db: {condition: service_healthy}
+  frontend:
+    build: ./frontend
+    ports: ["8080:80"]
+    depends_on: [backend]
+volumes:
+  db_data:
